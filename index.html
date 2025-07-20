@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaung's Job Application Tracker</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* Use the Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        /* Style for the date input placeholder */
+        input[type="date"]:required:invalid::-webkit-datetime-edit { color: #6b7280; }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">Job Application Tracker ✨</h1>
+            <p class="text-lg text-gray-400">Keep track of your job search journey.</p>
+            <div id="loading-auth" class="mt-4 text-sm text-yellow-400">Connecting to database...</div>
+            <div id="user-info" class="hidden mt-2 text-xs text-gray-500"></div>
+        </header>
+
+        <!-- Main Content: Form and Table -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left Column: Application Form -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg sticky top-8">
+                    <h2 id="form-title" class="text-2xl font-semibold text-white mb-4">Add New Application</h2>
+                    <form id="applicationForm" class="space-y-4">
+                        <input type="hidden" id="editDocId">
+                        <input type="text" id="companyName" placeholder="Company Name" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <input type="text" id="role" placeholder="Role / Job Title" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        
+                        <div>
+                            <label for="dateApplied" class="text-sm text-gray-400 mb-1 block">Date Applied</label>
+                            <input type="date" id="dateApplied" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+
+                        <input type="url" id="jobLink" placeholder="Link to Job Posting" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        
+                        <select id="status" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="Wishlist">Wishlist</option>
+                            <option value="To Apply">To Apply</option>
+                            <option value="Applied">Applied</option>
+                            <option value="Screening">Screening</option>
+                            <option value="Interview">Interview</option>
+                            <option value="Offer">Offer</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Withdrew">Withdrew</option>
+                        </select>
+
+                        <textarea id="notes" placeholder="Notes (e.g., recruiter name, next steps)" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 h-28 resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+
+                        <div class="flex space-x-2">
+                            <button type="submit" id="submit-button" class="flex-grow w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                Add Application
+                            </button>
+                             <button type="button" id="cancel-edit-btn" class="hidden w-auto bg-gray-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-gray-400 transition-all duration-300">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Applications Table -->
+            <div class="lg:col-span-2">
+                 <div id="loading-data" class="flex justify-center items-center h-64 bg-gray-800 rounded-xl shadow-lg">
+                    <p class="text-gray-400">Loading applications...</p>
+                </div>
+                <div id="table-wrapper" class="hidden bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table id="applicationTable" class="w-full text-sm text-left text-gray-300">
+                            <thead class="text-xs text-gray-400 uppercase bg-gray-700">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Company</th>
+                                    <th scope="col" class="px-6 py-3">Role</th>
+                                    <th scope="col" class="px-6 py-3">Date Applied</th>
+                                    <th scope="col" class="px-6 py-3">Status</th>
+                                    <th scope="col" class="px-6 py-3">Link</th>
+                                    <th scope="col" class="px-6 py-3">Notes</th>
+                                    <th scope="col" class="px-6 py-3 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applicationTableBody">
+                                <!-- Job applications will be dynamically added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                 <div id="empty-state" class="hidden text-center py-20 px-6 bg-gray-800 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold text-white">No Applications Yet</h3>
+                    <p class="text-gray-400 mt-2">Use the form on the left to add your first job application.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-backdrop bg-black bg-opacity-50">
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-semibold text-white mb-4">Confirm Deletion</h3>
+            <p class="text-gray-300 mb-6">Are you sure you want to delete this application? This action cannot be undone.</p>
+            <div class="flex justify-end space-x-4">
+                <button id="cancel-delete-btn" class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-semibold transition-colors">Cancel</button>
+                <button id="confirm-delete-btn" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors">Delete</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DOM ELEMENT REFERENCES ---
+        const applicationForm = document.getElementById('applicationForm');
+        const tableBody = document.getElementById('applicationTableBody');
+        const submitButton = document.getElementById('submit-button');
+        const loadingAuthDiv = document.getElementById('loading-auth');
+        const loadingDataDiv = document.getElementById('loading-data');
+        const tableWrapper = document.getElementById('table-wrapper');
+        const emptyStateDiv = document.getElementById('empty-state');
+        const userInfoDiv = document.getElementById('user-info');
+        const formTitle = document.getElementById('form-title');
+        const editDocIdInput = document.getElementById('editDocId');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const deleteModal = document.getElementById('delete-modal');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+
+        // --- FIREBASE CONFIGURATION ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId, applicationsCollectionRef;
+        let applicationsCache = []; // Cache for holding application data
+        let docIdToDelete = null; // To store the ID of the doc to be deleted
+
+        // --- MAIN INITIALIZATION ---
+        async function main() {
+            if (!firebaseConfig.apiKey) {
+                loadingAuthDiv.textContent = "Firebase configuration is missing.";
+                loadingAuthDiv.classList.replace('text-yellow-400', 'text-red-500');
+                submitButton.disabled = true;
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, user => {
+                    if (user) {
+                        userId = user.uid;
+                        loadingAuthDiv.textContent = 'Connection successful!';
+                        loadingAuthDiv.classList.replace('text-yellow-400', 'text-green-400');
+                        userInfoDiv.textContent = `User ID: ${userId}`;
+                        userInfoDiv.classList.remove('hidden');
+                        
+                        applicationsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/applications`);
+                        setupRealtimeListener();
+                        submitButton.disabled = false;
+                    } else {
+                        loadingAuthDiv.textContent = 'User not authenticated.';
+                        submitButton.disabled = true;
+                    }
+                    setTimeout(() => loadingAuthDiv.style.display = 'none', 2000);
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                loadingAuthDiv.textContent = `Error: ${error.message}`;
+                loadingAuthDiv.classList.replace('text-yellow-400', 'text-red-500');
+                submitButton.disabled = true;
+            }
+        }
+
+        // --- FIRESTORE REAL-TIME LISTENER ---
+        function setupRealtimeListener() {
+            const q = query(collection(db, `artifacts/${appId}/users/${userId}/applications`));
+            onSnapshot(q, (snapshot) => {
+                loadingDataDiv.style.display = 'none';
+                applicationsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                applicationsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (applicationsCache.length === 0) {
+                    tableWrapper.classList.add('hidden');
+                    emptyStateDiv.classList.remove('hidden');
+                    tableBody.innerHTML = '';
+                } else {
+                    emptyStateDiv.classList.add('hidden');
+                    tableWrapper.classList.remove('hidden');
+                    renderTable(applicationsCache);
+                }
+            }, (error) => {
+                console.error("Error fetching applications:", error);
+                loadingDataDiv.innerHTML = `<p class="text-red-500">Error loading data.</p>`;
+            });
+        }
+
+        // --- RENDER TABLE ---
+        function renderTable(applications) {
+            tableBody.innerHTML = '';
+            applications.forEach(app => {
+                const row = document.createElement('tr');
+                row.className = "bg-gray-800 border-b border-gray-700 hover:bg-gray-600 transition-colors";
+                const displayDate = app.date ? new Date(app.date + 'T00:00:00').toLocaleDateString() : 'N/A';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-white whitespace-nowrap">${app.company}</td>
+                    <td class="px-6 py-4">${app.role}</td>
+                    <td class="px-6 py-4">${displayDate}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 font-semibold text-xs rounded-full ${getStatusColor(app.status)}">${app.status}</span></td>
+                    <td class="px-6 py-4">
+                        ${app.link ? `<a href="${app.link}" target="_blank" class="text-blue-400 hover:underline">View</a>` : 'N/A'}
+                    </td>
+                    <td class="px-6 py-4 max-w-xs truncate" title="${app.notes}">${app.notes || 'N/A'}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center space-x-2">
+                            <button data-id="${app.id}" class="edit-btn text-blue-400 hover:text-blue-300" title="Edit"><i class="fas fa-pencil-alt fa-fw"></i></button>
+                            <button data-id="${app.id}" class="delete-btn text-red-500 hover:text-red-400" title="Delete"><i class="fas fa-trash-alt fa-fw"></i></button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // --- FORM SUBMISSION HANDLER (ADD/UPDATE) ---
+        applicationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!userId) return;
+
+            const applicationData = {
+                company: document.getElementById('companyName').value,
+                role: document.getElementById('role').value,
+                date: document.getElementById('dateApplied').value,
+                link: document.getElementById('jobLink').value,
+                status: document.getElementById('status').value,
+                notes: document.getElementById('notes').value,
+            };
+            
+            const docId = editDocIdInput.value;
+
+            try {
+                if (docId) {
+                    // Update existing document
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/applications`, docId);
+                    await updateDoc(docRef, applicationData);
+                } else {
+                    // Add new document
+                    await addDoc(applicationsCollectionRef, applicationData);
+                }
+                resetForm();
+            } catch (error) {
+                console.error("Error saving document: ", error);
+            }
+        });
+
+        // --- TABLE ACTIONS (EDIT/DELETE) ---
+        tableBody.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            const docId = button.dataset.id;
+            if (button.classList.contains('edit-btn')) {
+                const appToEdit = applicationsCache.find(app => app.id === docId);
+                if (appToEdit) startEditMode(appToEdit);
+            } else if (button.classList.contains('delete-btn')) {
+                showDeleteModal(docId);
+            }
+        });
+
+        // --- EDIT MODE FUNCTIONS ---
+        function startEditMode(app) {
+            formTitle.textContent = 'Edit Application';
+            editDocIdInput.value = app.id;
+            document.getElementById('companyName').value = app.company;
+            document.getElementById('role').value = app.role;
+            document.getElementById('dateApplied').value = app.date;
+            document.getElementById('jobLink').value = app.link;
+            document.getElementById('status').value = app.status;
+            document.getElementById('notes').value = app.notes;
+            submitButton.textContent = 'Update Application';
+            cancelEditBtn.classList.remove('hidden');
+        }
+
+        function resetForm() {
+            formTitle.textContent = 'Add New Application';
+            applicationForm.reset();
+            editDocIdInput.value = '';
+            submitButton.textContent = 'Add Application';
+            cancelEditBtn.classList.add('hidden');
+        }
+        
+        cancelEditBtn.addEventListener('click', resetForm);
+
+        // --- DELETE MODAL FUNCTIONS ---
+        function showDeleteModal(docId) {
+            docIdToDelete = docId;
+            deleteModal.classList.remove('hidden');
+            deleteModal.classList.add('opacity-100');
+        }
+
+        function hideDeleteModal() {
+            docIdToDelete = null;
+            deleteModal.classList.add('hidden');
+            deleteModal.classList.remove('opacity-100');
+        }
+
+        cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+
+        confirmDeleteBtn.addEventListener('click', async () => {
+            if (docIdToDelete) {
+                try {
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/applications`, docIdToDelete));
+                    hideDeleteModal();
+                } catch (error) {
+                    console.error("Error deleting document: ", error);
+                    hideDeleteModal();
+                }
+            }
+        });
+
+        // --- HELPER FUNCTION FOR STATUS COLOR ---
+        function getStatusColor(status) {
+            switch (status) {
+                case 'Offer': return 'bg-green-200 text-green-900';
+                case 'Interview': return 'bg-yellow-200 text-yellow-900';
+                case 'Applied': case 'Screening': return 'bg-blue-200 text-blue-900';
+                case 'Rejected': case 'Withdrew': return 'bg-red-200 text-red-900';
+                case 'Wishlist': case 'To Apply': return 'bg-purple-200 text-purple-900';
+                default: return 'bg-gray-200 text-gray-900';
+            }
+        }
+
+        // --- RUN THE APP ---
+        main();
+    </script>
+</body>
+</html>
