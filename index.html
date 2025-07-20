@@ -160,7 +160,14 @@
 
         // --- FIREBASE CONFIGURATION ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const firebaseConfig = {
+          apiKey: "AIzaSyB-5koxCKdX4LUBR1tKIDDtaM4x8_578xk",
+          authDomain: "myjobtracker-d5ff7.firebaseapp.com",
+          projectId: "myjobtracker-d5ff7",
+          storageBucket: "myjobtracker-d5ff7.firebasestorage.app",
+          messagingSenderId: "942187375026",
+          appId: "1:942187375026:web:36c26d0c05f2f66c239cab"
+        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let db, auth, userId, applicationsCollectionRef;
