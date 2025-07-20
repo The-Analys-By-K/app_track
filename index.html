@@ -35,13 +35,14 @@
 </head>
 <body class="bg-gray-900 text-gray-200">
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+    <!-- Main App View -->
+    <div id="app-view" class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
         
         <!-- Header Section -->
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-white mb-2">Job Application Tracker ✨</h1>
             <p class="text-lg text-gray-400">Keep track of your job search journey.</p>
-            <div id="loading-auth" class="mt-4 text-sm text-yellow-400">Connecting to database...</div>
+            <div id="auth-status" class="mt-4 text-sm text-yellow-400">Authenticating...</div>
             <div id="user-info" class="hidden mt-2 text-xs text-gray-500"></div>
         </header>
 
@@ -139,17 +140,17 @@
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- DOM ELEMENT REFERENCES ---
         const applicationForm = document.getElementById('applicationForm');
-        const tableBody = document.getElementById('applicationTableBody');
         const submitButton = document.getElementById('submit-button');
-        const loadingAuthDiv = document.getElementById('loading-auth');
+        const tableBody = document.getElementById('applicationTableBody');
         const loadingDataDiv = document.getElementById('loading-data');
         const tableWrapper = document.getElementById('table-wrapper');
         const emptyStateDiv = document.getElementById('empty-state');
+        const authStatus = document.getElementById('auth-status');
         const userInfoDiv = document.getElementById('user-info');
         const formTitle = document.getElementById('form-title');
         const editDocIdInput = document.getElementById('editDocId');
@@ -158,31 +159,27 @@
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
         const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
-        // --- FIREBASE CONFIGURATION ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // --- FIREBASE CONFIGURATION (USER PROVIDED) ---
         const firebaseConfig = {
           apiKey: "AIzaSyB-5koxCKdX4LUBR1tKIDDtaM4x8_578xk",
           authDomain: "myjobtracker-d5ff7.firebaseapp.com",
           projectId: "myjobtracker-d5ff7",
-          storageBucket: "myjobtracker-d5ff7.firebasestorage.app",
+          storageBucket: "myjobtracker-d5ff7.appspot.com",
           messagingSenderId: "942187375026",
           appId: "1:942187375026:web:36c26d0c05f2f66c239cab"
         };
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // --- HARDCODED USER CREDENTIALS ---
+        const USER_EMAIL = "kaung@gmail.com";
+        const USER_PASSWORD = "123456789";
 
-        let db, auth, userId, applicationsCollectionRef;
-        let applicationsCache = []; // Cache for holding application data
-        let docIdToDelete = null; // To store the ID of the doc to be deleted
+        let db, auth;
+        let applicationsCache = [];
+        let docIdToDelete = null;
+        let firestoreUnsubscribe = null;
 
         // --- MAIN INITIALIZATION ---
         async function main() {
-            if (!firebaseConfig.apiKey) {
-                loadingAuthDiv.textContent = "Firebase configuration is missing.";
-                loadingAuthDiv.classList.replace('text-yellow-400', 'text-red-500');
-                submitButton.disabled = true;
-                return;
-            }
-
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -190,39 +187,40 @@
 
                 onAuthStateChanged(auth, user => {
                     if (user) {
-                        userId = user.uid;
-                        loadingAuthDiv.textContent = 'Connection successful!';
-                        loadingAuthDiv.classList.replace('text-yellow-400', 'text-green-400');
-                        userInfoDiv.textContent = `User ID: ${userId}`;
+                        // User is signed in, set up the app
+                        authStatus.textContent = "Authentication successful!";
+                        authStatus.classList.replace('text-yellow-400', 'text-green-400');
+                        userInfoDiv.textContent = `Signed in as: ${user.email}`;
                         userInfoDiv.classList.remove('hidden');
-                        
-                        applicationsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/applications`);
-                        setupRealtimeListener();
                         submitButton.disabled = false;
+                        setupRealtimeListener(user.uid);
                     } else {
-                        loadingAuthDiv.textContent = 'User not authenticated.';
+                        // User is signed out, do nothing until sign-in attempt completes
+                        authStatus.textContent = "Not authenticated.";
                         submitButton.disabled = true;
+                        if (firestoreUnsubscribe) {
+                            firestoreUnsubscribe();
+                        }
                     }
-                    setTimeout(() => loadingAuthDiv.style.display = 'none', 2000);
                 });
 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Attempt to sign in with hardcoded credentials
+                await signInWithEmailAndPassword(auth, USER_EMAIL, USER_PASSWORD);
+
             } catch (error) {
-                console.error("Firebase Initialization Error:", error);
-                loadingAuthDiv.textContent = `Error: ${error.message}`;
-                loadingAuthDiv.classList.replace('text-yellow-400', 'text-red-500');
+                console.error("Authentication Error:", error);
+                authStatus.textContent = `Login Failed: ${error.message}. Please check credentials and Firebase setup.`;
+                authStatus.classList.replace('text-yellow-400', 'text-red-500');
                 submitButton.disabled = true;
             }
         }
 
         // --- FIRESTORE REAL-TIME LISTENER ---
-        function setupRealtimeListener() {
-            const q = query(collection(db, `artifacts/${appId}/users/${userId}/applications`));
-            onSnapshot(q, (snapshot) => {
+        function setupRealtimeListener(userId) {
+            const applicationsCollectionRef = collection(db, `users/${userId}/applications`);
+            const q = query(applicationsCollectionRef);
+            
+            firestoreUnsubscribe = onSnapshot(q, (snapshot) => {
                 loadingDataDiv.style.display = 'none';
                 applicationsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 applicationsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -273,6 +271,7 @@
         // --- FORM SUBMISSION HANDLER (ADD/UPDATE) ---
         applicationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const userId = auth.currentUser?.uid;
             if (!userId) return;
 
             const applicationData = {
@@ -285,14 +284,13 @@
             };
             
             const docId = editDocIdInput.value;
+            const applicationsCollectionRef = collection(db, `users/${userId}/applications`);
 
             try {
                 if (docId) {
-                    // Update existing document
-                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/applications`, docId);
+                    const docRef = doc(db, `users/${userId}/applications`, docId);
                     await updateDoc(docRef, applicationData);
                 } else {
-                    // Add new document
                     await addDoc(applicationsCollectionRef, applicationData);
                 }
                 resetForm();
@@ -355,9 +353,10 @@
         cancelDeleteBtn.addEventListener('click', hideDeleteModal);
 
         confirmDeleteBtn.addEventListener('click', async () => {
-            if (docIdToDelete) {
+            const userId = auth.currentUser?.uid;
+            if (docIdToDelete && userId) {
                 try {
-                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/applications`, docIdToDelete));
+                    await deleteDoc(doc(db, `users/${userId}/applications`, docIdToDelete));
                     hideDeleteModal();
                 } catch (error) {
                     console.error("Error deleting document: ", error);
