@@ -22,8 +22,8 @@
             font-family: 'Inter', sans-serif;
         }
         /* Custom scrollbar for a cleaner look */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
         /* Style for the date input placeholder */
@@ -31,96 +31,83 @@
         .modal-backdrop {
             transition: opacity 0.3s ease-in-out;
         }
+        /* Drag and Drop Styles */
+        .card.dragging {
+            opacity: 0.5;
+            transform: rotate(3deg);
+        }
+        .drag-over {
+            border-style: dashed;
+            border-color: #3b82f6; /* blue-500 */
+        }
+        /* Style for the details/summary arrow */
+        summary::-webkit-details-marker {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
 
     <!-- Main App View -->
-    <div id="app-view" class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+    <div id="app-view" class="flex flex-col h-screen">
         
         <!-- Header Section -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-white mb-2">Job Application Tracker ✨</h1>
-            <p class="text-lg text-gray-400">Keep track of your job search journey.</p>
-            <div id="auth-status" class="mt-4 text-sm text-yellow-400">Authenticating...</div>
-            <div id="user-info" class="hidden mt-2 text-xs text-gray-500"></div>
+        <header class="text-center p-4 border-b border-gray-700 flex-shrink-0">
+            <h1 class="text-3xl font-bold text-white">Job Application Tracker ✨</h1>
+            <div id="auth-status" class="mt-2 text-sm text-yellow-400">Authenticating...</div>
+            <div id="user-info" class="hidden mt-1 text-xs text-gray-500"></div>
         </header>
 
-        <!-- Main Content: Form and Table -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <!-- Left Column: Application Form -->
-            <div class="lg:col-span-1">
-                <div class="bg-gray-800 p-6 rounded-xl shadow-lg sticky top-8">
-                    <h2 id="form-title" class="text-2xl font-semibold text-white mb-4">Add New Application</h2>
-                    <form id="applicationForm" class="space-y-4">
+        <!-- Form Section (Collapsible) -->
+        <div class="p-4 flex-shrink-0">
+            <details id="form-details" class="bg-gray-800 rounded-xl shadow-lg" open>
+                <summary class="p-4 cursor-pointer flex justify-between items-center">
+                    <h2 id="form-title" class="text-xl font-semibold text-white">Add New Application</h2>
+                    <i class="fas fa-chevron-down transition-transform"></i>
+                </summary>
+                <div class="p-4 border-t border-gray-700">
+                    <form id="applicationForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                         <input type="hidden" id="editDocId">
-                        <input type="text" id="companyName" placeholder="Company Name" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <input type="text" id="role" placeholder="Role / Job Title" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <input type="text" id="companyName" placeholder="Company Name" required class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                        <input type="text" id="role" placeholder="Role / Job Title" required class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                         
                         <div>
-                            <label for="dateApplied" class="text-sm text-gray-400 mb-1 block">Date Applied</label>
-                            <input type="date" id="dateApplied" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <label for="dateApplied" class="text-xs text-gray-400 mb-1 block">Date Applied</label>
+                            <input type="date" id="dateApplied" required class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                         </div>
 
-                        <input type="url" id="jobLink" placeholder="Link to Job Posting" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        
-                        <select id="status" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="Wishlist">Wishlist</option>
-                            <option value="To Apply">To Apply</option>
+                        <select id="status" required class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                             <option value="Applied">Applied</option>
                             <option value="Screening">Screening</option>
                             <option value="Interview">Interview</option>
                             <option value="Offer">Offer</option>
                             <option value="Rejected">Rejected</option>
-                            <option value="Withdrew">Withdrew</option>
                         </select>
 
-                        <textarea id="notes" placeholder="Notes (e.g., recruiter name, next steps)" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 h-28 resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                        <input type="url" id="jobLink" placeholder="Link to Job Posting" class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm lg:col-span-2">
+                        
+                        <textarea id="notes" placeholder="Notes..." class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 h-12 resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm lg:col-span-2"></textarea>
 
-                        <div class="flex space-x-2">
-                            <button type="submit" id="submit-button" class="flex-grow w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                        <div class="flex space-x-2 lg:col-span-4">
+                            <button type="submit" id="submit-button" class="flex-grow w-full bg-blue-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed text-sm">
                                 Add Application
                             </button>
-                             <button type="button" id="cancel-edit-btn" class="hidden w-auto bg-gray-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-gray-400 transition-all duration-300">
+                             <button type="button" id="cancel-edit-btn" class="hidden w-auto bg-gray-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-gray-400 transition-all duration-300 text-sm">
                                 Cancel
                             </button>
                         </div>
                     </form>
                 </div>
-            </div>
-
-            <!-- Right Column: Applications Table -->
-            <div class="lg:col-span-2">
-                 <div id="loading-data" class="flex justify-center items-center h-64 bg-gray-800 rounded-xl shadow-lg">
-                    <p class="text-gray-400">Loading applications...</p>
-                </div>
-                <div id="table-wrapper" class="hidden bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table id="applicationTable" class="w-full text-sm text-left text-gray-300">
-                            <thead class="text-xs text-gray-400 uppercase bg-gray-700">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">Company</th>
-                                    <th scope="col" class="px-6 py-3">Role</th>
-                                    <th scope="col" class="px-6 py-3">Date Applied</th>
-                                    <th scope="col" class="px-6 py-3">Status</th>
-                                    <th scope="col" class="px-6 py-3">Link</th>
-                                    <th scope="col" class="px-6 py-3">Notes</th>
-                                    <th scope="col" class="px-6 py-3 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="applicationTableBody">
-                                <!-- Job applications will be dynamically added here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                 <div id="empty-state" class="hidden text-center py-20 px-6 bg-gray-800 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold text-white">No Applications Yet</h3>
-                    <p class="text-gray-400 mt-2">Use the form on the left to add your first job application.</p>
-                </div>
-            </div>
+            </details>
         </div>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow flex p-4 pt-0 gap-4 overflow-x-auto">
+            <!-- Kanban Board Columns -->
+            <div id="kanban-board" class="flex-grow flex gap-4">
+                <!-- Columns will be dynamically generated here -->
+            </div>
+        </main>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -146,13 +133,11 @@
         // --- DOM ELEMENT REFERENCES ---
         const applicationForm = document.getElementById('applicationForm');
         const submitButton = document.getElementById('submit-button');
-        const tableBody = document.getElementById('applicationTableBody');
-        const loadingDataDiv = document.getElementById('loading-data');
-        const tableWrapper = document.getElementById('table-wrapper');
-        const emptyStateDiv = document.getElementById('empty-state');
+        const kanbanBoard = document.getElementById('kanban-board');
         const authStatus = document.getElementById('auth-status');
         const userInfoDiv = document.getElementById('user-info');
         const formTitle = document.getElementById('form-title');
+        const formDetails = document.getElementById('form-details');
         const editDocIdInput = document.getElementById('editDocId');
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
         const deleteModal = document.getElementById('delete-modal');
@@ -172,6 +157,14 @@
         // --- HARDCODED USER CREDENTIALS ---
         const USER_EMAIL = "kaung@gmail.com";
         const USER_PASSWORD = "123456789";
+        
+        // --- KANBAN BOARD CONFIGURATION ---
+        const boardColumns = [
+            { title: 'Applied', statuses: ['Applied'], id: 'col-applied' },
+            { title: 'Interviewing', statuses: ['Screening', 'Interview'], id: 'col-interview' },
+            { title: 'Offer', statuses: ['Offer'], id: 'col-offer' },
+            { title: 'Rejected', statuses: ['Rejected'], id: 'col-rejected' }
+        ];
 
         let db, auth;
         let applicationsCache = [];
@@ -180,6 +173,13 @@
 
         // --- MAIN INITIALIZATION ---
         async function main() {
+            renderBoardColumns(); // Render the board structure immediately
+            addDragAndDropListeners(); // Setup listeners for the columns
+            formDetails.addEventListener('toggle', () => {
+                const icon = formDetails.querySelector('i');
+                icon.classList.toggle('rotate-180', formDetails.open);
+            });
+
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -187,7 +187,6 @@
 
                 onAuthStateChanged(auth, user => {
                     if (user) {
-                        // User is signed in, set up the app
                         authStatus.textContent = "Authentication successful!";
                         authStatus.classList.replace('text-yellow-400', 'text-green-400');
                         userInfoDiv.textContent = `Signed in as: ${user.email}`;
@@ -195,21 +194,16 @@
                         submitButton.disabled = false;
                         setupRealtimeListener(user.uid);
                     } else {
-                        // User is signed out, do nothing until sign-in attempt completes
                         authStatus.textContent = "Not authenticated.";
                         submitButton.disabled = true;
-                        if (firestoreUnsubscribe) {
-                            firestoreUnsubscribe();
-                        }
+                        if (firestoreUnsubscribe) firestoreUnsubscribe();
                     }
                 });
 
-                // Attempt to sign in with hardcoded credentials
                 await signInWithEmailAndPassword(auth, USER_EMAIL, USER_PASSWORD);
-
             } catch (error) {
                 console.error("Authentication Error:", error);
-                authStatus.textContent = `Login Failed: ${error.message}. Please check credentials and Firebase setup.`;
+                authStatus.textContent = `Login Failed: ${error.message}.`;
                 authStatus.classList.replace('text-yellow-400', 'text-red-500');
                 submitButton.disabled = true;
             }
@@ -221,50 +215,132 @@
             const q = query(applicationsCollectionRef);
             
             firestoreUnsubscribe = onSnapshot(q, (snapshot) => {
-                loadingDataDiv.style.display = 'none';
                 applicationsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                applicationsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                if (applicationsCache.length === 0) {
-                    tableWrapper.classList.add('hidden');
-                    emptyStateDiv.classList.remove('hidden');
-                    tableBody.innerHTML = '';
-                } else {
-                    emptyStateDiv.classList.add('hidden');
-                    tableWrapper.classList.remove('hidden');
-                    renderTable(applicationsCache);
-                }
+                renderApplicationCards();
             }, (error) => {
                 console.error("Error fetching applications:", error);
-                loadingDataDiv.innerHTML = `<p class="text-red-500">Error loading data.</p>`;
+                kanbanBoard.innerHTML = `<p class="text-red-500">Error loading data.</p>`;
             });
         }
 
-        // --- RENDER TABLE ---
-        function renderTable(applications) {
-            tableBody.innerHTML = '';
-            applications.forEach(app => {
-                const row = document.createElement('tr');
-                row.className = "bg-gray-800 border-b border-gray-700 hover:bg-gray-600 transition-colors";
-                const displayDate = app.date ? new Date(app.date + 'T00:00:00').toLocaleDateString() : 'N/A';
+        // --- KANBAN BOARD RENDERING ---
+        function renderBoardColumns() {
+            kanbanBoard.innerHTML = boardColumns.map(col => `
+                <div class="flex-shrink-0 w-80 bg-gray-800 rounded-xl flex flex-col">
+                    <h3 class="p-3 text-md font-semibold text-white border-b border-gray-700 sticky top-0 bg-gray-800">${col.title}</h3>
+                    <div id="${col.id}" data-statuses='${JSON.stringify(col.statuses)}' class="p-3 flex-grow overflow-y-auto card-container">
+                        <!-- Application cards will be rendered here -->
+                    </div>
+                </div>
+            `).join('');
+        }
 
-                row.innerHTML = `
-                    <td class="px-6 py-4 font-medium text-white whitespace-nowrap">${app.company}</td>
-                    <td class="px-6 py-4">${app.role}</td>
-                    <td class="px-6 py-4">${displayDate}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-1 font-semibold text-xs rounded-full ${getStatusColor(app.status)}">${app.status}</span></td>
-                    <td class="px-6 py-4">
-                        ${app.link ? `<a href="${app.link}" target="_blank" class="text-blue-400 hover:underline">View</a>` : 'N/A'}
-                    </td>
-                    <td class="px-6 py-4 max-w-xs truncate" title="${app.notes}">${app.notes || 'N/A'}</td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex justify-center items-center space-x-2">
+        function renderApplicationCards() {
+            // Clear all columns first
+            document.querySelectorAll('.card-container').forEach(c => c.innerHTML = '');
+
+            const visibleApps = applicationsCache.filter(app => boardColumns.some(col => col.statuses.includes(app.status)));
+
+            if (visibleApps.length === 0) {
+                 const firstCol = document.querySelector('.card-container');
+                 if(firstCol) {
+                    firstCol.innerHTML = `<p class="text-center text-sm text-gray-500 p-4">No applications yet. Add one to get started!</p>`;
+                 }
+            }
+
+            visibleApps.forEach(app => {
+                const column = boardColumns.find(c => c.statuses.includes(app.status));
+                if (!column) return; // Skip if status doesn't match any column
+
+                const columnEl = document.getElementById(column.id);
+                const card = document.createElement('div');
+                card.className = "card bg-gray-700 p-3 rounded-lg mb-3 shadow-md border border-gray-600 cursor-grab";
+                card.draggable = true;
+                card.dataset.id = app.id; // Set data-id for drag and drop
+                
+                const displayDate = app.date ? new Date(app.date + 'T00:00:00').toLocaleDateString() : 'N/A';
+                
+                // **FIX:** Change the pill text for the 'Interviewing' column
+                let pillText = app.status;
+                if (column.title === 'Interviewing') {
+                    pillText = 'Interviewing';
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h4 class="font-bold text-white text-md mb-1">${app.company}</h4>
+                        <span class="px-2 py-1 font-semibold text-xs rounded-full ${getStatusColor(app.status)}">${pillText}</span>
+                    </div>
+                    <p class="text-gray-300 text-sm mb-2">${app.role}</p>
+                    <p class="text-gray-400 text-xs mb-3">Applied: ${displayDate}</p>
+                    <div class="flex justify-between items-center border-t border-gray-600 pt-2">
+                         ${app.link ? `<a href="${app.link}" target="_blank" class="text-blue-400 hover:underline text-sm">View Post</a>` : '<span></span>'}
+                        <div class="flex items-center space-x-3">
                             <button data-id="${app.id}" class="edit-btn text-blue-400 hover:text-blue-300" title="Edit"><i class="fas fa-pencil-alt fa-fw"></i></button>
                             <button data-id="${app.id}" class="delete-btn text-red-500 hover:text-red-400" title="Delete"><i class="fas fa-trash-alt fa-fw"></i></button>
                         </div>
-                    </td>
+                    </div>
                 `;
-                tableBody.appendChild(row);
+                columnEl.appendChild(card);
+            });
+        }
+
+        // --- DRAG AND DROP LOGIC ---
+        function addDragAndDropListeners() {
+            kanbanBoard.addEventListener('dragstart', e => {
+                if (e.target.classList.contains('card')) {
+                    e.target.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', e.target.dataset.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+            });
+
+            kanbanBoard.addEventListener('dragend', e => {
+                if (e.target.classList.contains('card')) {
+                    e.target.classList.remove('dragging');
+                }
+            });
+
+            kanbanBoard.addEventListener('dragover', e => {
+                const columnContainer = e.target.closest('.card-container');
+                if (columnContainer) {
+                    e.preventDefault(); // Necessary to allow dropping
+                }
+            });
+
+            kanbanBoard.addEventListener('dragenter', e => {
+                const columnContainer = e.target.closest('.card-container');
+                if (columnContainer) {
+                    columnContainer.classList.add('drag-over');
+                }
+            });
+
+            kanbanBoard.addEventListener('dragleave', e => {
+                 const columnContainer = e.target.closest('.card-container');
+                 if (columnContainer) {
+                    columnContainer.classList.remove('drag-over');
+                 }
+            });
+
+            kanbanBoard.addEventListener('drop', async e => {
+                e.preventDefault();
+                const columnContainer = e.target.closest('.card-container');
+                if (columnContainer) {
+                    columnContainer.classList.remove('drag-over');
+                    const docId = e.dataTransfer.getData('text/plain');
+                    const newStatuses = JSON.parse(columnContainer.dataset.statuses);
+                    const newStatus = newStatuses[0]; // Default to the first status of the column
+                    
+                    const userId = auth.currentUser?.uid;
+                    if (docId && newStatus && userId) {
+                        const docRef = doc(db, `users/${userId}/applications`, docId);
+                        try {
+                            await updateDoc(docRef, { status: newStatus });
+                        } catch (error) {
+                            console.error("Error updating document status:", error);
+                        }
+                    }
+                }
             });
         }
 
@@ -299,12 +375,15 @@
             }
         });
 
-        // --- TABLE ACTIONS (EDIT/DELETE) ---
-        tableBody.addEventListener('click', (e) => {
+        // --- CLICK ACTIONS (EDIT/DELETE) ---
+        kanbanBoard.addEventListener('click', (e) => {
             const button = e.target.closest('button');
-            if (!button) return;
+if (!button) return;
 
-            const docId = button.dataset.id;
+            const cardElement = button.closest('.card');
+            if (!cardElement) return;
+
+            const docId = cardElement.dataset.id;
             if (button.classList.contains('edit-btn')) {
                 const appToEdit = applicationsCache.find(app => app.id === docId);
                 if (appToEdit) startEditMode(appToEdit);
@@ -315,6 +394,7 @@
 
         // --- EDIT MODE FUNCTIONS ---
         function startEditMode(app) {
+            formDetails.open = true; // Ensure form is visible
             formTitle.textContent = 'Edit Application';
             editDocIdInput.value = app.id;
             document.getElementById('companyName').value = app.company;
