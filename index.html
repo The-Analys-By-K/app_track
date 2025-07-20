@@ -60,9 +60,9 @@
 
         <!-- Form Section (Collapsible) -->
         <div class="p-4 flex-shrink-0">
-            <details id="form-details" class="bg-gray-800 rounded-xl shadow-lg" open>
+            <details id="form-details" class="bg-gray-800 rounded-xl shadow-lg">
                 <summary class="p-4 cursor-pointer flex justify-between items-center">
-                    <h2 id="form-title" class="text-xl font-semibold text-white">Add New Application</h2>
+                    <h2 id="form-title" class="text-xl font-semibold text-white">Add / Edit Application</h2>
                     <i class="fas fa-chevron-down transition-transform"></i>
                 </summary>
                 <div class="p-4 border-t border-gray-700">
@@ -102,9 +102,9 @@
         </div>
 
         <!-- Main Content Area -->
-        <main class="flex-grow flex p-4 pt-0 gap-4 overflow-x-auto">
+        <main class="flex-grow p-4 pt-0 overflow-auto">
             <!-- Kanban Board Columns -->
-            <div id="kanban-board" class="flex-grow flex gap-4">
+            <div id="kanban-board" class="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-4 h-full">
                 <!-- Columns will be dynamically generated here -->
             </div>
         </main>
@@ -226,7 +226,7 @@
         // --- KANBAN BOARD RENDERING ---
         function renderBoardColumns() {
             kanbanBoard.innerHTML = boardColumns.map(col => `
-                <div class="flex-shrink-0 w-80 bg-gray-800 rounded-xl flex flex-col">
+                <div class="bg-gray-800 rounded-xl flex flex-col lg:w-80 lg:flex-shrink-0">
                     <h3 class="p-3 text-md font-semibold text-white border-b border-gray-700 sticky top-0 bg-gray-800">${col.title}</h3>
                     <div id="${col.id}" data-statuses='${JSON.stringify(col.statuses)}' class="p-3 flex-grow overflow-y-auto card-container">
                         <!-- Application cards will be rendered here -->
@@ -260,7 +260,7 @@
                 
                 const displayDate = app.date ? new Date(app.date + 'T00:00:00').toLocaleDateString() : 'N/A';
                 
-                // **FIX:** Change the pill text for the 'Interviewing' column
+                // Change the pill text for the 'Interviewing' column
                 let pillText = app.status;
                 if (column.title === 'Interviewing') {
                     pillText = 'Interviewing';
@@ -408,7 +408,7 @@ if (!button) return;
         }
 
         function resetForm() {
-            formTitle.textContent = 'Add New Application';
+            formTitle.textContent = 'Add / Edit Application';
             applicationForm.reset();
             editDocIdInput.value = '';
             submitButton.textContent = 'Add Application';
