@@ -114,7 +114,7 @@
         <!-- Main Content Area -->
         <main class="flex-grow p-4 pt-0 overflow-auto">
             <!-- Kanban Board Columns -->
-            <div id="kanban-board" class="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-4 h-full">
+            <div id="kanban-board" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
                 <!-- Columns will be dynamically generated here -->
             </div>
         </main>
@@ -240,7 +240,7 @@
         // --- KANBAN BOARD RENDERING ---
         function renderBoardColumns() {
             kanbanBoard.innerHTML = boardColumns.map(col => `
-                <div class="bg-gray-800 rounded-xl flex flex-col lg:w-80 lg:flex-shrink-0">
+                <div class="bg-gray-800 rounded-xl flex flex-col">
                     <h3 class="p-3 text-md font-semibold text-white border-b border-gray-700 sticky top-0 bg-gray-800">${col.title}</h3>
                     <div id="${col.id}" data-statuses='${JSON.stringify(col.statuses)}' class="p-3 flex-grow overflow-y-auto card-container">
                         <!-- Application cards will be rendered here -->
@@ -453,7 +453,7 @@ if (!button) return;
             deleteModal.classList.add('hidden');
             deleteModal.classList.remove('opacity-100');
         }
-
+        
         cancelDeleteBtn.addEventListener('click', hideDeleteModal);
 
         confirmDeleteBtn.addEventListener('click', async () => {
