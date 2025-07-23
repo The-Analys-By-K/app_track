@@ -44,6 +44,13 @@
         summary::-webkit-details-marker {
             display: none;
         }
+        /* Hide the ugly 'x' from search inputs */
+        input[type="search"]::-webkit-search-decoration,
+        input[type="search"]::-webkit-search-cancel-button,
+        input[type="search"]::-webkit-search-results-button,
+        input[type="search"]::-webkit-search-results-decoration {
+          -webkit-appearance:none;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
@@ -54,6 +61,9 @@
         <!-- Header Section -->
         <header class="text-center p-4 border-b border-gray-700 flex-shrink-0">
             <h1 class="text-3xl font-bold text-white">Job Application Tracker ✨</h1>
+            <div class="w-full max-w-md mx-auto mt-4">
+                 <input type="search" id="searchInput" placeholder="Search by company or role..." class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            </div>
             <div id="auth-status" class="mt-2 text-sm text-yellow-400">Authenticating...</div>
             <div id="user-info" class="hidden mt-1 text-xs text-gray-500"></div>
         </header>
@@ -143,6 +153,7 @@
         const deleteModal = document.getElementById('delete-modal');
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
         const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const searchInput = document.getElementById('searchInput');
 
         // --- FIREBASE CONFIGURATION (USER PROVIDED) ---
         const firebaseConfig = {
@@ -175,10 +186,13 @@
         async function main() {
             renderBoardColumns(); // Render the board structure immediately
             addDragAndDropListeners(); // Setup listeners for the columns
+            
             formDetails.addEventListener('toggle', () => {
                 const icon = formDetails.querySelector('i');
                 icon.classList.toggle('rotate-180', formDetails.open);
             });
+
+            searchInput.addEventListener('input', renderApplicationCards);
 
             try {
                 const app = initializeApp(firebaseConfig);
@@ -239,12 +253,22 @@
             // Clear all columns first
             document.querySelectorAll('.card-container').forEach(c => c.innerHTML = '');
 
-            const visibleApps = applicationsCache.filter(app => boardColumns.some(col => col.statuses.includes(app.status)));
+            const searchTerm = searchInput.value.toLowerCase();
+            let filteredApps = applicationsCache;
+
+            if (searchTerm) {
+                filteredApps = applicationsCache.filter(app =>
+                    app.company.toLowerCase().includes(searchTerm) ||
+                    app.role.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            const visibleApps = filteredApps.filter(app => boardColumns.some(col => col.statuses.includes(app.status)));
 
             if (visibleApps.length === 0) {
                  const firstCol = document.querySelector('.card-container');
                  if(firstCol) {
-                    firstCol.innerHTML = `<p class="text-center text-sm text-gray-500 p-4">No applications yet. Add one to get started!</p>`;
+                    firstCol.innerHTML = `<p class="text-center text-sm text-gray-500 p-4">${searchTerm ? 'No matching applications found.' : 'No applications yet. Add one!'}</p>`;
                  }
             }
 
